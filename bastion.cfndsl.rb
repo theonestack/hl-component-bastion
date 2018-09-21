@@ -12,7 +12,10 @@ CloudFormation do
     Domain 'vpc'
   end
 
-  RecordSet('BastionDNS') do
+  Condition('Route53ZoneGiven', FnNot(FnEquals(Ref('DnsDomain'),'')))
+
+  Route53_RecordSet('BastionDNS') do
+    Condition 'Route53ZoneGiven'
     HostedZoneName FnJoin('', [ Ref('EnvironmentName'), '.', Ref('DnsDomain'), '.'])
     Comment 'Bastion Public Record Set'
     Name FnJoin('', [ "bastion", ".", Ref('EnvironmentName'), '.', Ref('DnsDomain'), '.' ])
@@ -21,7 +24,7 @@ CloudFormation do
     ResourceRecords [ Ref("BastionIPAddress") ]
   end
 
-  Role('Role') do
+  IAM_Role('Role') do
     AssumeRolePolicyDocument service_role_assume_policy('ec2')
     Path '/'
     Policies(IAMPolicies.new.create_policies([
@@ -37,14 +40,16 @@ CloudFormation do
     Roles [Ref('Role')]
   end
 
+  Condition('LaunchConfigKeySet', FnNot(FnEquals(Ref('KeyName'),'')))
+
   LaunchConfiguration('LaunchConfig') do
     ImageId Ref('Ami')
     InstanceType Ref('InstanceType')
     AssociatePublicIpAddress true
     IamInstanceProfile Ref('InstanceProfile')
-    KeyName Ref('KeyName')
+    KeyName FnIf('LaunchConfigKeySet', Ref('KeyName'), Ref('AWS::NoValue'))
     SecurityGroups [ Ref('SecurityGroupBastion') ]
-    UserData FnBase64(FnJoin("",[
+    UserData FnBase64(FnJoin('',[
       "#!/bin/bash\n",
       "aws --region ", Ref("AWS::Region"), " ec2 associate-address --allocation-id ", FnGetAtt('BastionIPAddress','AllocationId') ," --instance-id $(curl http://169.254.169.254/2014-11-05/meta-data/instance-id -s)\n",
       "hostname ", Ref('EnvironmentName') ,"-" ,"bastion-`/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}'`\n",

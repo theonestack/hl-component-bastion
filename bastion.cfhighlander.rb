@@ -1,5 +1,5 @@
 CfhighlanderTemplate do
-  DependsOn 'vpc@1.2.0'
+  DependsOn stdext
   Parameters do
     ComponentParam 'EnvironmentName', 'dev', isGlobal: true
     ComponentParam 'EnvironmentType', 'development', isGlobal: true
@@ -19,10 +19,14 @@ CfhighlanderTemplate do
 
     maximum_availability_zones.times do |az|
       ComponentParam "SubnetPublic#{az}"
+      MappingParam "Az#{az}" do
+          map 'AzMappings'
+          attribute "Az#{az}"
+      end
     end
 
     ComponentParam 'VPCId', type: 'AWS::EC2::VPC::Id'
-    ComponentParam 'SecurityGroupDev'
-    ComponentParam 'SecurityGroupOps'
+    ComponentParam 'SecurityGroupDev', type: 'AWS::EC2::SecurityGroup::Id'
+    ComponentParam 'SecurityGroupOps', type: 'AWS::EC2::SecurityGroup::Id'
   end
 end
