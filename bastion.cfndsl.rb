@@ -16,13 +16,13 @@ CloudFormation do
 
   Route53_RecordSet('BastionDNS') do
     Condition 'Route53ZoneGiven'
-    HostedZoneName FnJoin('', [ Ref('EnvironmentName'), '.', Ref('DnsDomain'), '.'])
+    HostedZoneName FnSub(dns_zone)
     Comment 'Bastion Public Record Set'
-    Name FnJoin('', [ "bastion", ".", Ref('EnvironmentName'), '.', Ref('DnsDomain'), '.' ])
+    Name FnSub(dns_record)
     Type 'A'
     TTL 60
     ResourceRecords [ Ref("BastionIPAddress") ]
-  end
+  end unless (dns_record.nil? or dns_record.empty?)
 
   IAM_Role('Role') do
     AssumeRolePolicyDocument service_role_assume_policy('ec2')

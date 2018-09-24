@@ -1,6 +1,9 @@
 stdext: github:toshke/hl-component-stdext
-maximum_availability_zones: 5
 
+dns_record: bastion.$EnvironmentName.$DnsDomain
+dns_zone: $EnvironmentName.$DnsDomain
+
+maximum_availability_zones: 5
 # Set `ip_blocks` here or export from vpc component
 # ip_blocks:
 #   local:
