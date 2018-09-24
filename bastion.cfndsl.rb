@@ -16,7 +16,7 @@ CloudFormation do
 
   Route53_RecordSet('BastionDNS') do
     Condition 'Route53ZoneGiven'
-    HostedZoneName FnSub(dns_zone)
+    HostedZoneId Ref('HostedZoneId')
     Comment 'Bastion Public Record Set'
     Name FnSub(dns_record)
     Type 'A'
