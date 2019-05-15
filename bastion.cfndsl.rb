@@ -60,8 +60,8 @@ CloudFormation do
     })
     LaunchConfigurationName Ref('LaunchConfig')
     HealthCheckGracePeriod '500'
-    MinSize 1
-    MaxSize 1
+    MinSize Ref('AsgMin')
+    MaxSize Ref('AsgMax')
     VPCZoneIdentifier az_conditional_resources('SubnetPublic', maximum_availability_zones)
     addTag("Name", FnJoin("",[Ref('EnvironmentName'), "-bastion-xx"]), true)
     addTag("Environment",Ref('EnvironmentName'), true)
