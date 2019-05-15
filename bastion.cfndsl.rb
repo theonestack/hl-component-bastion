@@ -16,9 +16,9 @@ CloudFormation do
   end
 
   RecordSet('BastionDNS') do
-    HostedZoneName FnIf('HostedZoneNameProvided', FnSub('${DnsDomain}.'), Ref('HostedZoneName'))
+    HostedZoneName FnIf('HostedZoneNameProvided', Ref('HostedZoneName'), FnSub('${DnsDomain}.'))
     Comment 'Bastion Public Record Set'
-    Name FnIf('RecordNameProvided', FnSub('bastion.${EnvironmentName}.${DnsDomain}.'), Ref('RecordName'))
+    Name FnIf('RecordNameProvided', Ref('RecordName'), FnSub('bastion.${EnvironmentName}.${DnsDomain}.'))
     Type 'A'
     TTL 60
     ResourceRecords [ Ref("BastionIPAddress") ]
