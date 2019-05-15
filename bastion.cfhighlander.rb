@@ -24,8 +24,8 @@ CfhighlanderTemplate do
     ComponentParam 'VPCId', type: 'AWS::EC2::VPC::Id'
     ComponentParam 'SecurityGroupDev'
     ComponentParam 'SecurityGroupOps'
-    ComponentParam 'AsgMin'
-    ComponentParam 'AsgMax'
+    ComponentParam 'AsgMin', 1
+    ComponentParam 'AsgMax', 1
     ComponentParam 'HostedZoneName'
     ComponentParam 'RecordName'
   end
