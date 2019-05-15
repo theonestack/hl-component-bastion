@@ -26,5 +26,7 @@ CfhighlanderTemplate do
     ComponentParam 'SecurityGroupOps'
     ComponentParam 'AsgMin'
     ComponentParam 'AsgMax'
+    ComponentParam 'HostedZoneName'
+    ComponentParam 'RecordName'
   end
 end

@@ -2,6 +2,9 @@ CloudFormation do
 
   az_conditions_resources('SubnetPublic', maximum_availability_zones)
 
+  Condition('HostedZoneNameProvided', FnNot(FnEquals(Ref('HostedZoneName'), '')))
+  Condition('RecordNameProvided', FnNot(FnEquals(Ref('RecordName'), '')))
+
   EC2_SecurityGroup('SecurityGroupBastion') do
     GroupDescription FnJoin(' ', [ Ref('EnvironmentName'), component_name ])
     VpcId Ref('VPCId')
@@ -13,9 +16,9 @@ CloudFormation do
   end
 
   RecordSet('BastionDNS') do
-    HostedZoneName FnJoin('', [ Ref('EnvironmentName'), '.', Ref('DnsDomain'), '.'])
+    HostedZoneName FnIf('HostedZoneNameProvided', FnSub('.${DnsDomain}.'), Ref('HostedZoneName'))
     Comment 'Bastion Public Record Set'
-    Name FnJoin('', [ "bastion", ".", Ref('EnvironmentName'), '.', Ref('DnsDomain'), '.' ])
+    Name FnIf('RecordNameProvided', FnSub('bastion.${EnvironmentName}.${DnsDomain}.'), Ref('RecordName'))
     Type 'A'
     TTL 60
     ResourceRecords [ Ref("BastionIPAddress") ]
