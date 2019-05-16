@@ -2,6 +2,9 @@ CloudFormation do
 
   az_conditions_resources('SubnetPublic', maximum_availability_zones)
 
+  Condition('HostedZoneNameProvided', FnNot(FnEquals(Ref('HostedZoneName'), '')))
+  Condition('RecordNameProvided', FnNot(FnEquals(Ref('RecordName'), '')))
+
   EC2_SecurityGroup('SecurityGroupBastion') do
     GroupDescription FnJoin(' ', [ Ref('EnvironmentName'), component_name ])
     VpcId Ref('VPCId')
@@ -13,9 +16,9 @@ CloudFormation do
   end
 
   RecordSet('BastionDNS') do
-    HostedZoneName FnJoin('', [ Ref('EnvironmentName'), '.', Ref('DnsDomain'), '.'])
+    HostedZoneName FnIf('HostedZoneNameProvided', Ref('HostedZoneName'), FnSub('${EnvironmentName}.${DnsDomain}.'))
     Comment 'Bastion Public Record Set'
-    Name FnJoin('', [ "bastion", ".", Ref('EnvironmentName'), '.', Ref('DnsDomain'), '.' ])
+    Name FnIf('RecordNameProvided', Ref('RecordName'), FnSub("#{instance_name}.${EnvironmentName}.${DnsDomain}."))
     Type 'A'
     TTL 60
     ResourceRecords [ Ref("BastionIPAddress") ]
@@ -60,10 +63,10 @@ CloudFormation do
     })
     LaunchConfigurationName Ref('LaunchConfig')
     HealthCheckGracePeriod '500'
-    MinSize 1
-    MaxSize 1
+    MinSize Ref('AsgMin')
+    MaxSize Ref('AsgMax')
     VPCZoneIdentifier az_conditional_resources('SubnetPublic', maximum_availability_zones)
-    addTag("Name", FnJoin("",[Ref('EnvironmentName'), "-bastion-xx"]), true)
+    addTag("Name", FnJoin("",[Ref('EnvironmentName'), "-#{instance_name}-xx"]), true)
     addTag("Environment",Ref('EnvironmentName'), true)
     addTag("EnvironmentType", Ref('EnvironmentType'), true)
     addTag("Role", "bastion", true)

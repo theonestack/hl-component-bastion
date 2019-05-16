@@ -1,4 +1,5 @@
 maximum_availability_zones: 5
+instance_name: bastion
 
 # Set `ip_blocks` here or export from vpc component
 # ip_blocks:
