@@ -4,6 +4,7 @@ CloudFormation do
 
   Condition('HostedZoneNameProvided', FnNot(FnEquals(Ref('HostedZoneName'), '')))
   Condition('RecordNameProvided', FnNot(FnEquals(Ref('RecordName'), '')))
+  Condition("SpotPriceSet", FnNot(FnEquals(Ref('SpotPrice'), '')))
 
   EC2_SecurityGroup('SecurityGroupBastion') do
     GroupDescription FnJoin(' ', [ Ref('EnvironmentName'), component_name ])
@@ -46,6 +47,7 @@ CloudFormation do
     AssociatePublicIpAddress true
     IamInstanceProfile Ref('InstanceProfile')
     KeyName Ref('KeyName')
+    SpotPrice FnIf('SpotPriceSet', Ref('SpotPrice'), Ref('AWS::NoValue'))
     SecurityGroups [ Ref('SecurityGroupBastion') ]
     UserData FnBase64(FnJoin("",[
       "#!/bin/bash\n",
