@@ -53,6 +53,14 @@ CloudFormation do
     ]))
   end
 
+  instance_tags = {}
+  instance_tags["Name"] = FnJoin("",[Ref('EnvironmentName'), "-#{instance_name}-xx"])
+  instance_tags["Environment"] = Ref('EnvironmentName')
+  instance_tags["EnvironmentName"] = Ref('EnvironmentName')
+  instance_tags["EnvironmentType"] = Ref('EnvironmentType')
+  instance_tags["Role"] = "bastion"
+  tags.each do { |k,v| instance_tags[k] = v }
+
   AutoScalingGroup('AutoScaleGroup') do
     UpdatePolicy('AutoScalingRollingUpdate', {
       "MinInstancesInService" => "0",
@@ -64,10 +72,7 @@ CloudFormation do
     MinSize Ref('AsgMin')
     MaxSize Ref('AsgMax')
     VPCZoneIdentifier Ref('SubnetIds')
-    addTag("Name", FnJoin("",[Ref('EnvironmentName'), "-#{instance_name}-xx"]), true)
-    addTag("Environment",Ref('EnvironmentName'), true)
-    addTag("EnvironmentType", Ref('EnvironmentType'), true)
-    addTag("Role", "bastion", true)
+    instance_tags.each do { |k,v| addTag(k,v,true) }
   end
 
   Output('SecurityGroupBastion', Ref('SecurityGroupBastion'))

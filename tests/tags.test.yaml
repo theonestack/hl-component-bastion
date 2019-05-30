@@ -1,0 +1,8 @@
+test_metadata:
+  type: config
+  name: tags
+  description: overide an existing tag and create a new one
+
+tags:
+  Name: overide
+  Project: MyApp
