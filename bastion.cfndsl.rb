@@ -37,6 +37,15 @@ CloudFormation do
     Roles [Ref('Role')]
   end
 
+  bastion_userdata = [
+    "#!/bin/bash\n",
+    "aws --region ", Ref("AWS::Region"), " ec2 associate-address --allocation-id ", FnGetAtt('BastionIPAddress','AllocationId') ," --instance-id $(curl http://169.254.169.254/2014-11-05/meta-data/instance-id -s)\n",
+    "hostname ", Ref('EnvironmentName') ,"-" ,"bastion-`/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}'`\n",
+    "sed '/HOSTNAME/d' /etc/sysconfig/network > /tmp/network && mv -f /tmp/network /etc/sysconfig/network && echo \"HOSTNAME=", Ref('EnvironmentName') ,"-" ,"bastion-`/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}'`\" >>/etc/sysconfig/network && /etc/init.d/network restart\n",
+  ]
+  
+  bastion_userdata.push(*userdata.split("\n")) if defined? userdata
+
   LaunchConfiguration('LaunchConfig') do
     ImageId Ref('Ami')
     InstanceType Ref('InstanceType')
@@ -45,12 +54,7 @@ CloudFormation do
     KeyName Ref('KeyName')
     SpotPrice FnIf('SpotPriceSet', Ref('SpotPrice'), Ref('AWS::NoValue'))
     SecurityGroups [ Ref('SecurityGroupBastion') ]
-    UserData FnBase64(FnJoin("",[
-      "#!/bin/bash\n",
-      "aws --region ", Ref("AWS::Region"), " ec2 associate-address --allocation-id ", FnGetAtt('BastionIPAddress','AllocationId') ," --instance-id $(curl http://169.254.169.254/2014-11-05/meta-data/instance-id -s)\n",
-      "hostname ", Ref('EnvironmentName') ,"-" ,"bastion-`/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}'`\n",
-      "sed '/HOSTNAME/d' /etc/sysconfig/network > /tmp/network && mv -f /tmp/network /etc/sysconfig/network && echo \"HOSTNAME=", Ref('EnvironmentName') ,"-" ,"bastion-`/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}'`\" >>/etc/sysconfig/network && /etc/init.d/network restart\n",
-    ]))
+    UserData FnBase64(FnJoin("",bastion_userdata))
   end
 
   instance_tags = {}
@@ -59,7 +63,7 @@ CloudFormation do
   instance_tags["EnvironmentName"] = Ref('EnvironmentName')
   instance_tags["EnvironmentType"] = Ref('EnvironmentType')
   instance_tags["Role"] = "bastion"
-  tags.each do { |k,v| instance_tags[k] = v }
+  tags.each { |k,v| instance_tags[k] = v } if defined? tags and tags.any?
 
   AutoScalingGroup('AutoScaleGroup') do
     UpdatePolicy('AutoScalingRollingUpdate', {
@@ -72,7 +76,7 @@ CloudFormation do
     MinSize Ref('AsgMin')
     MaxSize Ref('AsgMax')
     VPCZoneIdentifier Ref('SubnetIds')
-    instance_tags.each do { |k,v| addTag(k,v,true) }
+    instance_tags.each { |k,v| addTag(k,v,true) }
   end
 
   Output('SecurityGroupBastion', Ref('SecurityGroupBastion'))

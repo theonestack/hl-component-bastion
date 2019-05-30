@@ -1,0 +1,8 @@
+test_metadata:
+  type: config
+  name: userdata
+  description: add extra userdata
+
+userdata: |
+  /usr/bin/bootstrap
+  echo "userdata complete"
