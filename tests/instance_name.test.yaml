@@ -1,0 +1,6 @@
+test_metadata:
+  type: config
+  name: instance_name
+  description: set the bastion name and dns record
+
+instance_name: someotherbastion
