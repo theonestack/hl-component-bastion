@@ -1,0 +1,15 @@
+test_metadata:
+  type: config
+  name: iam
+  description: override iam policies
+
+iam_services:
+  - ec2
+  - ssm
+
+iam_policies:
+  get-bastion-secrets:
+    action:
+      - ssm:GetParameters
+    resource:
+      - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}/bastion/*

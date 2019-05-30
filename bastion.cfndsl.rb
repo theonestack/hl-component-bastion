@@ -6,6 +6,13 @@ CloudFormation do
     GroupDescription FnJoin(' ', [ Ref('EnvironmentName'), component_name ])
     VpcId Ref('VPCId')
     SecurityGroupIngress sg_create_rules(securityGroups, ip_blocks) if defined? securityGroups
+    Metadata({
+      cfn_nag: {
+        rules_to_suppress: [
+          { id: 'F1000', reason: 'ignore for now' }
+        ]
+      }
+    })
   end
 
   EIP('BastionIPAddress') do
@@ -21,15 +28,22 @@ CloudFormation do
     ResourceRecords [ Ref("BastionIPAddress") ]
   end
 
+  policies = []
+  iam_policies.each do |name,policy|
+    policies << iam_policy_allow(name,policy['action'],policy['resource'] || '*')
+  end if defined? iam_policies
+
   Role('Role') do
-    AssumeRolePolicyDocument service_role_assume_policy('ec2')
+    AssumeRolePolicyDocument service_role_assume_policy(iam_services)
     Path '/'
-    Policies(IAMPolicies.new.create_policies([
-      'associate-address',
-      'ec2-describe',
-      'cloudwatch-logs',
-      'ssm'
-    ]))
+    Policies(policies)
+    Metadata({
+      cfn_nag: {
+        rules_to_suppress: [
+          { id: 'F3', reason: 'ignore describe* for now' }
+        ]
+      }
+    })
   end
 
   InstanceProfile('InstanceProfile') do
@@ -43,7 +57,7 @@ CloudFormation do
     "hostname ", Ref('EnvironmentName') ,"-" ,"bastion-`/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}'`\n",
     "sed '/HOSTNAME/d' /etc/sysconfig/network > /tmp/network && mv -f /tmp/network /etc/sysconfig/network && echo \"HOSTNAME=", Ref('EnvironmentName') ,"-" ,"bastion-`/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}'`\" >>/etc/sysconfig/network && /etc/init.d/network restart\n",
   ]
-  
+
   bastion_userdata.push(*userdata.split("\n")) if defined? userdata
 
   LaunchConfiguration('LaunchConfig') do

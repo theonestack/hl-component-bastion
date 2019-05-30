@@ -2,3 +2,22 @@ maximum_availability_zones: 5
 instance_name: bastion
 
 dns_format: ${EnvironmentName}.${DnsDomain}
+
+iam_services: ec2
+
+iam_policies:
+  associate-address:
+    action:
+      - ec2:AssociateAddress
+  ec2-describe:
+    action:
+      - ec2:Describe*
+  cloudwatch-logs:
+    action:
+      - logs:CreateLogGroup
+      - logs:CreateLogStream
+      - logs:PutLogEvents
+      - logs:DescribeLogStreams
+      - logs:DescribeLogGroups
+    resource:
+      - arn:aws:logs:*:*:*
