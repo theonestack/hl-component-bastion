@@ -32,10 +32,13 @@ CloudFormation do
   iam_policies.each do |name,policy|
     policies << iam_policy_allow(name,policy['action'],policy['resource'] || '*')
   end if defined? iam_policies
+  
+   managed_iam_policies = external_parameters.fetch(:managed_iam_policies, [])
 
   Role('Role') do
     AssumeRolePolicyDocument service_role_assume_policy(iam_services)
     Path '/'
+    ManagedPolicyArns managed_iam_policies if managed_iam_policies.any?
     Policies(policies)
     Metadata({
       cfn_nag: {
