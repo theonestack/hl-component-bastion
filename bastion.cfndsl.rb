@@ -74,13 +74,13 @@ CloudFormation do
     UserData FnBase64(FnJoin("",bastion_userdata))
   end
 
-  instance_tags = {}
-  instance_tags["Name"] = FnJoin("",[Ref('EnvironmentName'), "-#{instance_name}-xx"])
-  instance_tags["Environment"] = Ref('EnvironmentName')
-  instance_tags["EnvironmentName"] = Ref('EnvironmentName')
-  instance_tags["EnvironmentType"] = Ref('EnvironmentType')
-  instance_tags["Role"] = "bastion"
-  tags.each { |k,v| instance_tags[k] = v } if defined? tags and tags.any?
+  instance_tags = []
+  instance_tags << { Key: 'Name', Value: FnJoin("",[Ref('EnvironmentName'), "-#{instance_name}-xx"]), PropagateAtLaunch: true }
+  instance_tags << { Key: 'Environment', Value: Ref('EnvironmentName'), PropagateAtLaunch: true }
+  instance_tags << { Key: 'EnvironmentName', Value: Ref('EnvironmentName'), PropagateAtLaunch: true }
+  instance_tags << { Key: 'EnvironmentType', Value: Ref('EnvironmentType'), PropagateAtLaunch: true }
+  instance_tags << { Key: 'Role', Value: 'bastion', PropagateAtLaunch: true }
+  tags.each { |k,v| instance_tags << {Key: k, Value: FnSub(v), PropagateAtLaunch: true} } if defined? tags and tags.any?
 
   AutoScalingGroup('AutoScaleGroup') do
     UpdatePolicy('AutoScalingRollingUpdate', {
@@ -93,7 +93,7 @@ CloudFormation do
     MinSize Ref('AsgMin')
     MaxSize Ref('AsgMax')
     VPCZoneIdentifier Ref('SubnetIds')
-    instance_tags.each { |k,v| addTag(k,v,true) }
+    Tags instance_tags
   end
 
   Output('SecurityGroupBastion', Ref('SecurityGroupBastion'))
