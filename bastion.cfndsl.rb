@@ -92,7 +92,7 @@ CloudFormation do
     HealthCheckGracePeriod '500'
     MinSize Ref('AsgMin')
     MaxSize Ref('AsgMax')
-    VPCZoneIdentifier Ref('SubnetIds')
+    VPCZoneIdentifiers Ref('SubnetIds')
     Tags instance_tags
   end
 
