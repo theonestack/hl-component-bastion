@@ -1,8 +1,10 @@
 test_metadata:
   type: config
   name: userdata
-  description: add extra userdata
+  description: Userdata as a list with newlines
 
-userdata: |
-  /usr/bin/bootstrap
-  echo "userdata complete"
+userdata:
+  - "cd /tmp \n"
+  - "sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm \n"
+  - "sudo systemctl enable amazon-ssm-agent \n"
+  - "sudo systemctl start amazon-ssm-agent \n"

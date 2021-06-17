@@ -1,0 +1,6 @@
+test_metadata:
+  type: config
+  name: private_only
+  description: Disables provision of EIP and public DNS record
+
+private_only: true
