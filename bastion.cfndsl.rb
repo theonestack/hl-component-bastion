@@ -1,5 +1,7 @@
 CloudFormation do
 
+  private_only = external_parameters.fetch(:private_only, false)
+
   Condition("SpotPriceSet", FnNot(FnEquals(Ref('SpotPrice'), '')))
 
   EC2_SecurityGroup('SecurityGroupBastion') do
@@ -14,18 +16,20 @@ CloudFormation do
       }
     })
   end
+  
+  unless private_only == true
+    EIP('BastionIPAddress') do
+      Domain 'vpc'
+    end
 
-  EIP('BastionIPAddress') do
-    Domain 'vpc'
-  end
-
-  RecordSet('BastionDNS') do
-    HostedZoneName FnSub("#{dns_format}.")
-    Comment 'Bastion Public Record Set'
-    Name FnSub("#{instance_name}.#{dns_format}.")
-    Type 'A'
-    TTL 60
-    ResourceRecords [ Ref("BastionIPAddress") ]
+    RecordSet('BastionDNS') do
+      HostedZoneName FnSub("#{dns_format}.")
+      Comment 'Bastion Public Record Set'
+      Name FnSub("#{instance_name}.#{dns_format}.")
+      Type 'A'
+      TTL 60
+      ResourceRecords [ Ref("BastionIPAddress") ]
+    end
   end
 
   policies = []
@@ -56,17 +60,33 @@ CloudFormation do
 
   bastion_userdata = [
     "#!/bin/bash\n",
-    "aws --region ", Ref("AWS::Region"), " ec2 associate-address --allocation-id ", FnGetAtt('BastionIPAddress','AllocationId') ," --instance-id $(curl http://169.254.169.254/2014-11-05/meta-data/instance-id -s)\n",
     "hostname ", Ref('EnvironmentName') ,"-" ,"#{instance_name}-`/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}'`\n",
     "sed '/HOSTNAME/d' /etc/sysconfig/network > /tmp/network && mv -f /tmp/network /etc/sysconfig/network && echo \"HOSTNAME=", Ref('EnvironmentName') ,"-" ,"#{instance_name}-`/opt/aws/bin/ec2-metadata --instance-id|/usr/bin/awk '{print $2}'`\" >>/etc/sysconfig/network && /etc/init.d/network restart\n",
   ]
 
-  bastion_userdata.push(*userdata.split("\n")) if defined? userdata
+  if private_only == false
+    associateip = [
+      "aws --region ", Ref("AWS::Region"), " ec2 associate-address --allocation-id ", FnGetAtt('BastionIPAddress','AllocationId') ," --instance-id $(curl http://169.254.169.254/2014-11-05/meta-data/instance-id -s)\n",
+    ]
+    bastion_userdata = bastion_userdata + associateip
+  end
+
+  if defined? userdata
+    if userdata.is_a?(String)
+      puts("IS A STRING")
+      bastion_userdata.push(*userdata.split("\n")) if defined? userdata
+    end
+
+    if userdata.kind_of?(Array)
+      puts("IS AN ARRAY")
+      bastion_userdata.push(*userdata) if defined? userdata
+    end
+  end
 
   LaunchConfiguration('LaunchConfig') do
     ImageId Ref('Ami')
     InstanceType Ref('InstanceType')
-    AssociatePublicIpAddress true
+    AssociatePublicIpAddress true unless private_only.equal? true
     IamInstanceProfile Ref('InstanceProfile')
     KeyName Ref('KeyName')
     SpotPrice FnIf('SpotPriceSet', Ref('SpotPrice'), Ref('AWS::NoValue'))
