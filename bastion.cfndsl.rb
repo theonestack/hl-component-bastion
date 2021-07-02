@@ -73,12 +73,10 @@ CloudFormation do
 
   if defined? userdata
     if userdata.is_a?(String)
-      puts("IS A STRING")
       bastion_userdata.push(*userdata.split("\n")) if defined? userdata
     end
 
     if userdata.kind_of?(Array)
-      puts("IS AN ARRAY")
       bastion_userdata.push(*userdata) if defined? userdata
     end
   end
