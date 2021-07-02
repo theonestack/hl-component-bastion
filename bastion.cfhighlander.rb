@@ -8,7 +8,7 @@ CfhighlanderTemplate do
     ComponentParam 'Ami', type: 'AWS::EC2::Image::Id'
     ComponentParam 'SpotPrice', ''
     ComponentParam 'InstanceType'
-    ComponentParam 'KeyName'
+    ComponentParam 'KeyName', ''
     ComponentParam 'DnsDomain'
     ComponentParam 'SubnetIds', type: 'CommaDelimitedList'
     ComponentParam 'VPCId', type: 'AWS::EC2::VPC::Id'

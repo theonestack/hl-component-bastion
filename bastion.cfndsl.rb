@@ -3,6 +3,7 @@ CloudFormation do
   private_only = external_parameters.fetch(:private_only, false)
 
   Condition("SpotPriceSet", FnNot(FnEquals(Ref('SpotPrice'), '')))
+  Condition("KeypairSet", FnNot(FnEquals(Ref('KeyName'), '')))
 
   EC2_SecurityGroup('SecurityGroupBastion') do
     GroupDescription FnJoin(' ', [ Ref('EnvironmentName'), component_name ])
@@ -73,12 +74,10 @@ CloudFormation do
 
   if defined? userdata
     if userdata.is_a?(String)
-      puts("IS A STRING")
       bastion_userdata.push(*userdata.split("\n")) if defined? userdata
     end
 
     if userdata.kind_of?(Array)
-      puts("IS AN ARRAY")
       bastion_userdata.push(*userdata) if defined? userdata
     end
   end
@@ -88,7 +87,7 @@ CloudFormation do
     InstanceType Ref('InstanceType')
     AssociatePublicIpAddress true unless private_only.equal? true
     IamInstanceProfile Ref('InstanceProfile')
-    KeyName Ref('KeyName')
+    KeyName FnIf('KeypairSet', Ref('KeyName'), Ref('AWS::NoValue'))
     SpotPrice FnIf('SpotPriceSet', Ref('SpotPrice'), Ref('AWS::NoValue'))
     SecurityGroups [ Ref('SecurityGroupBastion') ]
     UserData FnBase64(FnJoin("",bastion_userdata))
